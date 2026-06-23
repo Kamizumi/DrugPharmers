@@ -61,6 +61,8 @@ ENV/
 *.njsproj
 *.sln
 *.sw?
+AGENTS.md
+CLAUDE.md
 
 # ==========================================
 # AWS & Cloud Tools

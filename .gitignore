@@ -25,6 +25,12 @@ lerna-debug.log*
 __pycache__/
 *.py[cod]
 *$py.class
+backend/.env
+backend/venv/
+backend/api/__pycache__/
+backend/api/db.sqlite3
+**/__pycache__/
+**/*.pyc
 
 # ==========================================
 # Virtual Environments

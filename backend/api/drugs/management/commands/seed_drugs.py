@@ -18,14 +18,17 @@ class Command(BaseCommand):
                 Drug.objects.get_or_create(
                     generic_name = row['generic_name'],
                     brand_name = row['brand_name'],
-                    drug_class = row['drug_class'],
-                    primary_fda_ind = row['primary_fda_ind'],
-                    other_fda_ind = row['other_fda_ind'],
-                    avail_strengths = row['avail_strengths']
-                    moa = row['moa'],
-                    dosing = row['dosing']
-                    side_effects = row['side_effects']
-                    boxed_warnings = row['boxed_warnings']
+                    defaults = {
+                        'drug_class': row['drug_class'],
+                        'primary_fda_ind': row['primary_fda_ind'],
+                        'other_fda_ind': row['other_fda_ind'],
+                        'avail_strengths': row['available_strengths'],
+                        'moa': row['moa'],
+                        'dosing_regimen': row['dosing_regimen'],
+                        'side_effects': row['side_effects'],
+                        'boxed_warnings': row['boxed_warnings']
+
+                    }
                 )
 
 

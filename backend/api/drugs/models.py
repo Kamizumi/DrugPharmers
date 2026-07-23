@@ -9,9 +9,9 @@ class Drug(models.Model):
     other_fda_ind = models.TextField()
     avail_strengths = models.TextField()
     moa = models.TextField()
-    dosing_ = models.TextField()
+    dosing_regimen = models.TextField()
     side_effects = models.TextField()
     boxed_warnings = models.TextField()
 
     def __str__(self):
-        return f"({self.brand_name}, {self.generic_name})"
+        return f"(Brand: {self.brand_name}, Generic: {self.generic_name}, Classification: {self.drug_class}, Primary FDA: {self.primary_fda_ind})"

@@ -1,4 +1,3 @@
-from django.test import TestCase
 from rest_framework.test import APITestCase
 from .models import Drug
 
@@ -8,16 +7,93 @@ from .models import Drug
 class TestAPIs(APITestCase):
 
     def setUp(self):
-        self.a_drug = Drug.objects.create(generic_name = "A",
+        self.full_drug = Drug.objects.create(
+                                        ranking = 1,
+                                        generic_name = "A",
                                         brand_name = "A Train",
                                         drug_class = "Drug Type A",
                                         primary_fda_ind = "Used to treat farts",
+                                        other_fda_ind = "Also treats hiccups",
                                         avail_strengths = "5mg, 10mg, 15mg",
                                         moa = "Absorption in the stomach",
                                         dosing_regimen = "5 poq",
-                                        side_effects = "Burps"
+                                        side_effects = "Burps",
+                                        boxed_warnings = "may cause sudden napping"
+                                        )
+        
+        self.min_drug = Drug.objects.create(
+                                        ranking = 2,
+                                        generic_name = 'B',
+                                        brand_name = "BoomerTown",
+                                        drug_class = "Antipsychotic",
+                                        primary_fda_ind = "Helps remedy schizophrenia",
+                                        avail_strengths = ".25 mcg",
+                                        moa = "stomach",
+                                        dosing_regimen = "1poq",
+                                        side_effects = "love"
                                         )
     
     def test_list_returns_200(self):
+        '''
+        Test to check if the API is properly returning the endpoint
+        '''
+
         response = self.client.get("/api/drugs/")
         self.assertEqual(response.status_code, 200)
+
+    
+    def test_every_drug_has_the_same_fields(self):
+        '''
+        Test to make sure that every drug has the same set fields
+        '''
+
+        EXPECTED_FIELDS = {
+                            "id", "ranking", "generic_name", "brand_name", "drug_class",
+                            "primary_fda_ind", "other_fda_ind", "avail_strengths", "moa",
+                            "dosing_regimen", "side_effects", "boxed_warnings"
+                            }
+        
+        response = self.client.get("/api/drugs/")
+        for drug in response.data:
+            self.assertEqual(set(drug.keys()), EXPECTED_FIELDS)
+
+
+    def test_round_trip_data(self):
+        '''
+        Test to ensure that the data from step 1 is equal to the value in step 5
+        Python -> DB -> ORM - > Serializer -> Json
+        Object creation -> SQLite storage -> Drugs.objects.all() reads it -> DrugSerializer converts it -> response.data["brand_name"]
+        '''
+
+        response = self.client.get("/api/drugs/")
+        full_drug = response.data[0]
+        self.assertEqual(full_drug["brand_name"], "A Train")
+
+    def test_required_fields_are_populated(self):
+        '''
+        Test to ensure that the drug objects all have the required fields populated
+        These are mandatory to have and must be populated
+        '''
+
+        REQUIRED_FIELDS = {
+                            "generic_name", "brand_name", "drug_class",
+                            "primary_fda_ind", "avail_strengths", "moa", "dosing_regimen",
+                            "side_effects"
+                            }
+        response = self.client.get("/api/drugs/")
+        for drug in response.data:
+            for field in REQUIRED_FIELDS:
+                with self.subTest(drug = drug["brand_name"], field = field):
+                    self.assertTrue(drug[field])
+
+    def test_optional_fields_default_to_empty_string(self):
+        '''
+        Test to ensure that optional fields (like other_fda_ind or black box warning)
+        are defaulted to empty strings if they aren't populated
+        '''
+        
+        response = self.client.get("/api/drugs/")
+        minimal = response.data[1]
+        self.assertEqual(minimal["other_fda_ind"], "")
+        self.assertEqual(minimal["boxed_warnings"], "")
+

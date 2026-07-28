@@ -1,9 +1,8 @@
 from django.core.management.base import BaseCommand
+from django.conf import settings
 import csv
 from drugs.models import Drug
 class Command(BaseCommand):
-
-    file_loc = "backend/data/updated_drugs.csv"
 
     help = "Seeds the database with our initial 200 drugs (missing 100)"
 
@@ -11,14 +10,15 @@ class Command(BaseCommand):
 
         self.stdout.write(self.style.WARNING(f"Seeding new data"))
 
-        with open("/Users/timothytsang/CS/DrugPharmers/backend/data/updated_drugs.csv", encoding = 'utf-8-sig') as drug_file:
+        with open(settings.DRUG_SEED_CSV, encoding = 'utf-8-sig') as drug_file:
             reader = csv.DictReader(drug_file)
-            for row in reader:
+            for i, row in enumerate(reader):
 
                 Drug.objects.get_or_create(
                     generic_name = row['generic_name'],
                     brand_name = row['brand_name'],
                     defaults = {
+                        'ranking' : i + 1,
                         'drug_class': row['drug_class'],
                         'primary_fda_ind': row['primary_fda_ind'],
                         'other_fda_ind': row['other_fda_ind'],

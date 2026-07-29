@@ -4,6 +4,18 @@ from .models import Drug
 
 # Create your tests here.
 
+REQUIRED_FIELDS = {
+                    "generic_name", "brand_name", "drug_class",
+                    "primary_fda_ind", "avail_strengths", "moa", "dosing_regimen",
+                    "side_effects"
+                }
+
+EXPECTED_FIELDS = {
+                    "id", "ranking", "generic_name", "brand_name", "drug_class",
+                    "primary_fda_ind", "other_fda_ind", "avail_strengths", "moa",
+                    "dosing_regimen", "side_effects", "boxed_warnings"
+                }
+
 class TestAPIs(APITestCase):
 
     def setUp(self):
@@ -46,13 +58,7 @@ class TestAPIs(APITestCase):
         '''
         Test to make sure that every drug has the same set fields
         '''
-
-        EXPECTED_FIELDS = {
-                            "id", "ranking", "generic_name", "brand_name", "drug_class",
-                            "primary_fda_ind", "other_fda_ind", "avail_strengths", "moa",
-                            "dosing_regimen", "side_effects", "boxed_warnings"
-                            }
-        
+    
         response = self.client.get("/api/drugs/")
         for drug in response.data:
             self.assertEqual(set(drug.keys()), EXPECTED_FIELDS)
@@ -75,11 +81,6 @@ class TestAPIs(APITestCase):
         These are mandatory to have and must be populated
         '''
 
-        REQUIRED_FIELDS = {
-                            "generic_name", "brand_name", "drug_class",
-                            "primary_fda_ind", "avail_strengths", "moa", "dosing_regimen",
-                            "side_effects"
-                            }
         response = self.client.get("/api/drugs/")
         for drug in response.data:
             for field in REQUIRED_FIELDS:
@@ -97,3 +98,18 @@ class TestAPIs(APITestCase):
         self.assertEqual(minimal["other_fda_ind"], "")
         self.assertEqual(minimal["boxed_warnings"], "")
 
+    def test_individual_drug_returns_200_and_correct_drug(self):
+        '''A valid pk that returns that specific drug'''
+        response = self.client.get(f"/api/drugs/{self.full_drug.pk}/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["brand_name"], "A Train")
+
+    def test_detail_returns_404_for_invalid__drug(self):
+        '''An id that doesn't exist returns 404, not an empty 200'''
+        response = self.client.get("/api/drugs/99999/")
+        self.assertEqual(response.status_code, 404)
+
+    def test_individual_drug_has_same_fields_as_list(self):
+        '''Individual drug view and list drug view have identical fields'''
+        response = self.client.get(f"/api/drugs/{self.full_drug.pk}/")
+        self.assertEqual(set(response.data.keys()), EXPECTED_FIELDS)

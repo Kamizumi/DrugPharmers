@@ -1,13 +1,20 @@
 from functools import lru_cache
 import re
 from django.db import models
+import random
 
+#Answers that don't really give credit because they're too vague
 NOISE = {"agent", "hormone"}
 
+#For fill in the blank so that users don't have to get exact match
 CLASS_OVERRIDES = {
     "CNS Agent for ADHD" : {"cns agent for adhd", "adhd"}
 }
 
+#Questions will TYPICALLY start with either the generic name or brand name when asking about its details
+NAME_FIELDS = {"generic_name", "brand_name"}
+
+#Normalizes the drug classification so that users are able to guess it easier
 def norm(s):
     return " ".join(s.casefold().split())
 
@@ -31,6 +38,7 @@ def accepted_answers(stored):
     return CLASS_OVERRIDES.get(stored) or derive_accepted(stored)
 
 class AnswerFormat(models.TextChoices):
+    """Types of questions that a user can select when creating an exam"""
     MULTIPLE_CHOICE = "multiple_choice", "Multiple choice"
     FREE_TEXT = "free_text", "Free text"
     BOTH = "both", "Both"
@@ -38,11 +46,13 @@ class AnswerFormat(models.TextChoices):
 RENDERABLE_FORMATS = [c for c in AnswerFormat.choices if c[0] != AnswerFormat.BOTH]
 
 class QuestionMode(models.TextChoices):
+    """Types of exam modes that a user can select when creating an exam """
     RECALL = "recall", "Recall"
     IDENTIFY = "identify", "Identify"
     MIXED = "mixed", "Mixed"
 
 class SelectionMode(models.TextChoices):
+    """"""
     RANGED = "ranged", "Ranged"
     RANDOM = "random", "Random"
     MISSED = "missed", "Missed"

@@ -1,5 +1,6 @@
 from functools import lru_cache
 import re
+from django.db import models
 
 NOISE = {"agent", "hormone"}
 
@@ -24,20 +25,38 @@ def derive_accepted(stored):
             accepted.add(p)
     return accepted - NOISE
 
-ANSWER_FORMATS = {
-    "generic_name" : {"free_text", "multiple_choice"},
-    "brand_name" : {"free_text", "multiple_choice"},
-    "drug_class" : {"free_text", "multiple_choice"},
-    "primary_fda_ind" : {"multiple_choice"},
-    "other_fda_ind" : {"multiple_choice"},
-    "avail_strengths" : {"multiple_choice"},
-    "moa" : {"multiple_choice"},
-    "dosing_regimen" : {"multiple_choice"},
-    "side_effects" : {"multiple_choice"},
-    "boxed_warnings" : {"multiple_choice"}
-}
-
 @lru_cache(maxsize = None)
 def accepted_answers(stored):
     """Public entry point - overrides win, otherwise derive"""
     return CLASS_OVERRIDES.get(stored) or derive_accepted(stored)
+
+class AnswerFormat(models.TextChoices):
+    MULTIPLE_CHOICE = "multiple_choice", "Multiple choice"
+    FREE_TEXT = "free_text", "Free text"
+    BOTH = "both", "Both"
+
+RENDERABLE_FORMATS = [c for c in AnswerFormat.choices if c[0] != AnswerFormat.BOTH]
+
+class QuestionMode(models.TextChoices):
+    RECALL = "recall", "Recall"
+    IDENTIFY = "identify", "Identify"
+    MIXED = "mixed", "Mixed"
+
+class SelectionMode(models.TextChoices):
+    RANGED = "ranged", "Ranged"
+    RANDOM = "random", "Random"
+    MISSED = "missed", "Missed"
+
+
+ANSWER_FORMATS = {
+    "generic_name" : {AnswerFormat.FREE_TEXT, AnswerFormat.MULTIPLE_CHOICE},
+    "brand_name" : {AnswerFormat.FREE_TEXT, AnswerFormat.MULTIPLE_CHOICE},
+    "drug_class" : {AnswerFormat.FREE_TEXT, AnswerFormat.MULTIPLE_CHOICE},
+    "primary_fda_ind" : {AnswerFormat.MULTIPLE_CHOICE},
+    "other_fda_ind" : {AnswerFormat.MULTIPLE_CHOICE},
+    "avail_strengths" : {AnswerFormat.MULTIPLE_CHOICE},
+    "moa" : {AnswerFormat.MULTIPLE_CHOICE},
+    "dosing_regimen" : {AnswerFormat.MULTIPLE_CHOICE},
+    "side_effects" : {AnswerFormat.MULTIPLE_CHOICE},
+    "boxed_warnings" : {AnswerFormat.MULTIPLE_CHOICE}
+}

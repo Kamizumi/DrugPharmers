@@ -1,5 +1,6 @@
 from django.db import models
 from django.conf import settings
+from .exam_rules import AnswerFormat, SelectionMode, QuestionMode, RENDERABLE_FORMATS
 
 
 class Drug(models.Model):
@@ -24,17 +25,18 @@ class ExamAttempt(models.Model):
     """User starts an exam; that is this session"""
     user = models.ForeignKey(settings.AUTH_USER_MODEL, null = True, blank = True, on_delete = models.CASCADE)
     created_at = models.DateTimeField(auto_now_add = True)
-    ranking_min = models.PositiveSmallIntegerField()
-    ranking_max = models.PositiveSmallIntegerField()
-    mode = models.CharField(max_length = 20) #for the purpose of recall, identification, and mixed
-    allowed_formats = models.CharField(max_length = 20, default = "multiple_choice")
+    ranking_min = models.PositiveSmallIntegerField(null = True, blank = True)
+    ranking_max = models.PositiveSmallIntegerField(null = True, blank = True)
+    selection_mode = models.CharField(max_length = 20, choices = SelectionMode.choices, default = SelectionMode.RANGED)
+    question_mode = models.CharField(max_length = 20, choices = QuestionMode.choices, default = QuestionMode.RECALL)
+    allowed_formats = models.CharField(max_length = 20, choices = AnswerFormat.choices, default = AnswerFormat.MULTIPLE_CHOICE)
 
 class ExamAnswer(models.Model):
     attempt = models.ForeignKey(ExamAttempt, related_name = "answers", on_delete = models.CASCADE)
     drug = models.ForeignKey(Drug, on_delete = models.CASCADE)
     prompt_field = models.CharField(max_length = 50)
     answer_field = models.CharField(max_length = 50)
-    answer_format = models.CharField(max_length = 20)
+    answer_format = models.CharField(max_length = 20, choices = RENDERABLE_FORMATS)
     user_response = models.TextField(blank = True, default = "")
     was_correct = models.BooleanField()
 

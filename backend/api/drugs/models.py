@@ -32,7 +32,11 @@ class ExamAttempt(models.Model):
     allowed_formats = models.CharField(max_length = 20, choices = AnswerFormat.choices, default = AnswerFormat.MULTIPLE_CHOICE)
 
 class ExamAnswer(models.Model):
+    """A  single question generated on the exam
     
+    Drug is paired with prompt_field/answer_field to define the question
+    The question is then displayed in the answer_format and the user's response
+    """
     attempt = models.ForeignKey(ExamAttempt, related_name = "answers", on_delete = models.CASCADE)
     drug = models.ForeignKey(Drug, on_delete = models.CASCADE)
     prompt_field = models.CharField(max_length = 50)

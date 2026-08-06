@@ -27,7 +27,7 @@ DRUG_SEED_CSV = BASE_DIR.parent / "data" / "updated_drugs.csv"
 SECRET_KEY = os.environ.get('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get("DJANGO_DEBUG", "False") == "True"
 
 ALLOWED_HOSTS = []
 

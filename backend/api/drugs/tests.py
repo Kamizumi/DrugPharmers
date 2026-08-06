@@ -92,7 +92,7 @@ class TestAPIs(APITestCase):
         Test to ensure that optional fields (like other_fda_ind or black box warning)
         are defaulted to empty strings if they aren't populated
         '''
-        
+
         response = self.client.get("/api/drugs/")
         minimal = response.data[1]
         self.assertEqual(minimal["other_fda_ind"], "")

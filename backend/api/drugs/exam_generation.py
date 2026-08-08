@@ -2,11 +2,13 @@ import random
 from .models import Drug
 from .exam_rules import ANSWER_FORMATS, NAME_FIELDS, AnswerFormat
 
-def build_question(drug, question_mode, allowed_formats):
+def build_question(drug, question_mode, allowed_formats, prompt_field = None, answer_field = None):
     """Returns a question dict for this drug, including the correct answer"""
-    prompt_field = random.choice(sorted(NAME_FIELDS))
+    if prompt_field is None:
+        prompt_field = random.choice(sorted(NAME_FIELDS))
     answer_candidates = [f for f in ANSWER_FORMATS if f != prompt_field and getattr(drug,f)]
-    answer_field = random.choice(answer_candidates)
+    if answer_field is None:
+        answer_field = random.choice(answer_candidates)
     answer_format = AnswerFormat.MULTIPLE_CHOICE
 
     #Answers from other questions that are there to be wrong
@@ -19,11 +21,11 @@ def build_question(drug, question_mode, allowed_formats):
         candidates = Drug.objects.filter(drug_class = drug.drug_class).exclude(pk = drug.pk)
 
     #Unpacks the argument into something like 'category = "antibiotics"' and then excludes it
-    pool = {getattr(d, answer_field) for d in candidates} - {correct}
+    pool = {getattr(d, answer_field) for d in candidates if getattr(d, answer_field)} - {correct}
 
     #Pool is a union of answers that were generated (excluding the correct answer) so they're wrong and the correct answer
     if len(pool) < 3:
-        pool |= {getattr(d, answer_field) for d in Drug.objects.exclude(pk = drug.pk)} - {correct}
+        pool |= {getattr(d, answer_field) for d in Drug.objects.exclude(pk = drug.pk) if getattr(d, answer_field)} - {correct}
 
     choices = random.sample(sorted(pool), 3 ) + [correct]
     random.shuffle(choices)

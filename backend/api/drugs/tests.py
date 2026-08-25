@@ -3,7 +3,7 @@ from django.test import TestCase
 from django.core.management import call_command
 from .models import Drug
 from .exam_generation import build_question
-from .exam_rules import QuestionMode, AnswerFormat, ANSWER_FORMATS, NAME_FIELDS
+from .exam_rules import QuestionMode, AnswerFormat, ANSWER_FORMATS, NAME_FIELDS, IDENTIFY_PROMPT_FIELDS
 
 
 # Create your tests here.
@@ -144,4 +144,29 @@ class TestQuestionGeneration(TestCase):
                     self.assertEqual(len(set(q["choices"])), 4)
                     self.assertEqual(q["choices"].count(q["correct_answer"]), 1)
                     self.assertNotIn("", q["choices"])
+
+    def test_identify_distractors_never_share_prompt(self):
+        '''Ensure generated answers are not the prompt'''
+        for drug in Drug.objects.all():
+            for prompt_field in IDENTIFY_PROMPT_FIELDS:
+                if not getattr(drug, prompt_field):
+                    continue
+                with self.subTest(drug = drug.brand_name, prompt = prompt_field):
+                    q = build_question(drug, QuestionMode.IDENTIFY, AnswerFormat.MULTIPLE_CHOICE,
+                                       prompt_field = prompt_field, answer_field = "generic_name")
+                    self.assertEqual(len(set(q["choices"])), 4)
+                    self.assertEqual(q["choices"].count(q["correct_answer"]), 1)
+
+                    for choice in q["choices"]:
+                        if choice == q["correct_answer"]:
+                            continue
+                        self.assertFalse(
+                            Drug.objects.filter(
+                                generic_name = choice,
+                                **{prompt_field: q["prompt_value"]}
+                            ).exists()
+                        )
+
+
+
 

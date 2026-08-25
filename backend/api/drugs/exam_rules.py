@@ -14,6 +14,8 @@ CLASS_OVERRIDES = {
 #Questions will TYPICALLY start with either the generic name or brand name when asking about its details
 NAME_FIELDS = {"generic_name", "brand_name"}
 
+IDENTIFY_PROMPT_FIELDS = {"drug_class", "primary_fda_ind", "moa", "boxed_warnings"}
+
 #Normalizes the drug classification so that users are able to guess it easier
 def norm(s):
     return " ".join(s.casefold().split())

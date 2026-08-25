@@ -14,7 +14,7 @@ class Command(BaseCommand):
             reader = csv.DictReader(drug_file)
             for i, row in enumerate(reader):
 
-                Drug.objects.get_or_create(
+                Drug.objects.update_or_create(
                     generic_name = row['generic_name'],
                     brand_name = row['brand_name'],
                     defaults = {

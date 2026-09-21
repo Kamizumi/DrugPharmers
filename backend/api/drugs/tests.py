@@ -3,7 +3,8 @@ from django.test import TestCase
 from django.core.management import call_command
 from .models import Drug
 from .exam_generation import build_question
-from .exam_rules import QuestionMode, AnswerFormat, ANSWER_FORMATS, NAME_FIELDS, IDENTIFY_PROMPT_FIELDS
+from .exam_rules import QuestionMode, AnswerFormat, ANSWER_FORMATS, NAME_FIELDS, IDENTIFY_PROMPT_FIELDS, salt_required, accepted_answers, norm
+
 
 
 # Create your tests here.
@@ -166,6 +167,60 @@ class TestQuestionGeneration(TestCase):
                                 **{prompt_field: q["prompt_value"]}
                             ).exists()
                         )
+    def test_mixed_produces_both_questions(self):
+        '''Ensure both types of questions are generated in mixed option'''
+        drug = Drug.objects.get(ranking = 1)
+        modes = set()
+        for _ in range(100):
+            q = build_question(drug, QuestionMode.MIXED, AnswerFormat.MULTIPLE_CHOICE)
+            modes.add(q["prompt_field"] in NAME_FIELDS)
+        self.assertEqual(modes, {True, False})
+
+class TestFreeTextGrading(TestCase):
+
+    @classmethod
+    def setUpTestData(cls):
+        call_command("seed_drugs", verbosity = 0)
+        salt_required.cache_clear()
+        accepted_answers.cache_clear()
+
+
+    def test_salt_required_is_found_from_data(self):
+        """Checks to see if these drugs are shown to need to have salt included"""
+        self.assertEqual(salt_required(), {"hydroxyzine", "metoprolol"})
+
+    def test_generic_accepts_base_name_unless_salt_matters(self):
+        """Testing on drugs that do have multiple salts vs those that don't"""
+        cases = [
+            ("Atorvastatin Calcium", "atorvastatin", True),
+            ("Doxycycline Hyclate", "doxycycline", True),
+            ("Hydrocodone Bitartrate with Acetaminophen", "hydrocodone with acetaminophen", True),
+            ("Metoprolol Succinate", "metoprolol", False),
+            ("Hydroxyzine Pamaote", "hydroxyzine", False),
+            ("Amoxicillin with Clavulanate Potassium", "amoxicillin", False),
+        ]
+
+        for stored, typed, expected in cases:
+            with self.subTest(stored = stored, typed = typed):
+                self.assertEqual(typed in accepted_answers("generic_name", stored), expected)
+
+    def test_brand_accepts_any_single_brand(self):
+        cases = [
+            ("Cardizem® (CD), Cartia®, Dilacor®, Dilt-XR®, Tiazac®", "cardizem"),
+            ("Coreg® & Coreg® CR", "coreg"),
+            ("Wellbutrin® (SR,XL), Zyban®", "zyban")
+        ]
+
+        for stored, typed in cases:
+            with self.subTest(stored = stored):
+                self.assertIn(typed, accepted_answers("brand_name", stored))
+
+    def test_every_drug_accepts_its_own_name(self):
+        for drug in Drug.objects.all():
+            for field in ("generic_name", "brand_name"):
+                with self.subTest(drug = drug.brand_name, field = field):
+                    stored = getattr(drug, field)
+                    self.assertIn(norm(stored), accepted_answers(field, stored))
 
 
 

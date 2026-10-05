@@ -3,7 +3,7 @@ from django.test import TestCase
 from django.core.management import call_command
 from .models import Drug
 from .exam_generation import build_question
-from .exam_rules import QuestionMode, AnswerFormat, ANSWER_FORMATS, NAME_FIELDS, IDENTIFY_PROMPT_FIELDS, salt_required, accepted_answers, norm
+from .exam_rules import QuestionMode, AnswerFormat, ANSWER_FORMATS, NAME_FIELDS, IDENTIFY_PROMPT_FIELDS, salt_required, accepted_answers, norm, grade
 
 
 
@@ -222,6 +222,21 @@ class TestFreeTextGrading(TestCase):
                     stored = getattr(drug, field)
                     self.assertIn(norm(stored), accepted_answers(field, stored))
 
+    def test_grade(self):
+        cases = [
+            # (field, format, correct_answer, user_response), expected
+            (("drug_class", AnswerFormat.FREE_TEXT, "Antiarrhythmic(Class II and III)", "ANTIARRHYTHMIC."), True),
+            (("drug_class", AnswerFormat.FREE_TEXT, "COPD Agent", "agent"), False),
+            (("generic_name", AnswerFormat.FREE_TEXT, "Atorvastatin Calcium", "atorvastatin"), True),
+            (("generic_name", AnswerFormat.FREE_TEXT, "Metoprolol Succinate", "metoprolol"), False),
+            (("brand_name", AnswerFormat.MULTIPLE_CHOICE, "Jenuvia", "Jenuvia"), True),
+            (("brand_name", AnswerFormat.MULTIPLE_CHOICE, "Jardiance", "Zyrtec"), False),
+            (("generic_name", AnswerFormat.FREE_TEXT, "Atorvastatin Calcium", ""), False),
+        ]
+
+        for args, expected in cases:
+            with self.subTest(args = args):
+                self.assertEqual(grade(*args), expected)
 
 
 

@@ -25,6 +25,7 @@ class ExamAttempt(models.Model):
     """User starts an exam; that is this session"""
     user = models.ForeignKey(settings.AUTH_USER_MODEL, null = True, blank = True, on_delete = models.CASCADE)
     created_at = models.DateTimeField(auto_now_add = True)
+    completed_at = models.DateTimeField(null = True, blank = True)
     ranking_min = models.PositiveSmallIntegerField(null = True, blank = True)
     ranking_max = models.PositiveSmallIntegerField(null = True, blank = True)
     selection_mode = models.CharField(max_length = 20, choices = SelectionMode.choices, default = SelectionMode.RANGED)
@@ -43,6 +44,7 @@ class ExamAnswer(models.Model):
     answer_field = models.CharField(max_length = 50)
     answer_format = models.CharField(max_length = 20, choices = RENDERABLE_FORMATS)
     user_response = models.TextField(blank = True, default = "")
-    was_correct = models.BooleanField()
+    was_correct = models.BooleanField(null = True, blank = True)
+
 
     

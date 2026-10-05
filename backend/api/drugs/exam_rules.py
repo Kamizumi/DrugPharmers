@@ -79,6 +79,10 @@ def derive_brand_answers(stored):
         if words:
             accepted.add(" ".join(words))
     return {a for a in accepted if a}
+
+def norm_input(s):
+    """Normalizes the user's input 'atorvastatin.' -> 'atorvastatin'"""
+    return norm(s).strip(".,;:!?®™ ")
 #Normalizes the drug classification so that users are able to guess it easier
 def norm(s):
     return " ".join(s.casefold().split())
@@ -107,6 +111,12 @@ FREE_TEXT_GRADERS = {
 def accepted_answers(field, stored):
     """Public entry point - overrides win, otherwise derive"""
     return FREE_TEXT_GRADERS[field](stored)
+
+def grade(answer_field, answer_format, correct_answer, user_response):
+    """Returns true if response earns credit."""
+    if answer_format == AnswerFormat.MULTIPLE_CHOICE:
+        return user_response == correct_answer
+    return norm_input(user_response) in accepted_answers(answer_field, correct_answer)
 
 class AnswerFormat(models.TextChoices):
     """Types of questions that a user can select when creating an exam"""

@@ -8,7 +8,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
 
-        self.stdout.write(self.style.WARNING(f"Seeding new data"))
+        self.stdout.write(self.style.WARNING(f"\nSeeding data"))
 
         with open(settings.DRUG_SEED_CSV, encoding = 'utf-8-sig') as drug_file:
             reader = csv.DictReader(drug_file)

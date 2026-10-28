@@ -1,7 +1,7 @@
 from rest_framework.test import APITestCase
 from django.test import TestCase
 from django.core.management import call_command
-from .models import Drug
+from .models import Drug, ExamAttempt, ExamAnswer
 from .exam_generation import build_question
 from .exam_rules import QuestionMode, AnswerFormat, ANSWER_FORMATS, NAME_FIELDS, IDENTIFY_PROMPT_FIELDS, salt_required, accepted_answers, norm, grade
 
@@ -118,6 +118,9 @@ class TestAPIs(APITestCase):
         '''Individual drug view and list drug view have identical fields'''
         response = self.client.get(f"/api/drugs/{self.full_drug.pk}/")
         self.assertEqual(set(response.data.keys()), EXPECTED_FIELDS)
+
+
+    
 
 
 class TestQuestionGeneration(TestCase):
@@ -238,5 +241,89 @@ class TestFreeTextGrading(TestCase):
             with self.subTest(args = args):
                 self.assertEqual(grade(*args), expected)
 
+class TestExamEndpoints(APITestCase):
 
+    @classmethod
+    def setUpTestData(cls):
+        call_command("seed_drugs", verbosity = 0)
 
+    def test_create_returns_one_question_per_drug(self):
+        '''A range of 5 drugs produces exactly 5 questions'''
+        response = self.client.post("/api/exams/",{
+            "ranking_min" : 1,
+            "ranking_max" : 5,
+            "question_mode" : "recall",
+            "allowed_formats" : "multiple_choice"
+        }, format = "json")
+
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(len(response.data["questions"]), 5)
+
+        attempt = ExamAttempt.objects.get(pk = response.data["attempt_id"])
+        self.assertEqual(attempt.answers.count(), 5)
+        self.assertFalse(attempt.answers.exclude(was_correct = None).exists())
+
+    def test_never_displays_answer(self):
+        '''The test doesn't display the answer.... duhhh'''
+
+        response = self.client.post("/api/exams/", {
+            "ranking_min" : 1,
+            "ranking_max" : 50,
+            "question_mode" : "mixed",
+            "allowed_formats" : "both",
+        }, format = "json")
+
+        self.assertEqual(response.status_code, 201)
+        for q in response.data["questions"]:
+            with self.subTest(id = q["id"]):
+                self.assertNotIn("correct_answer", q)
+                self.assertNotIn("drug_id", q)
+
+    def test_creation_rejects_bad_config(self):
+        '''A bad configuratino returns 400, not a corrected exam'''
+        cases = [
+            #All incorrect payloads
+            ({"ranking_min" : 10, "ranking_max" : 5,
+            "question_mode" : "recall",
+            "allowed_formats" : "multiple_choice"},
+            "min above max"),
+
+            ({"ranking_min" : 1, "ranking_max": 5000,
+              "question_mode" : "recall", "allowed_formats" : "multiple_choice"},
+              "Range is greater than last seeded drug"),
+
+            ({"ranking_min" : 1, "ranking_max" : 5,
+              "question_mode" : "identify", "allowed_formats": "free_text"},
+            "Identify cannot be graded as free text"),
+
+            ({"question_mode" : "recall", "allowed_formats" : "multiple_choice"},
+             "ranged exam with no range"),
+            ]
+
+        for payload, reason in cases:
+            with self.subTest(reason = reason):
+                response = self.client.post("/api/exams/", payload, format = "json")
+                self.assertEqual(response.status_code, 400)
+                self.assertFalse(ExamAttempt.objects.exists())
+
+    def test_submit_grades_and_scores(self):
+        '''The server grades from its own data, not what the user claims'''
+        response = self.client.post("/api/exams/",{
+            "ranking_min" : 1, "ranking_max" : 5,
+            "question_mode" : "recall", "allowed_formats" : "multiple_choice", 
+        }, format = "json")
+        attempt_id = response.data["attempt_id"]
+
+        #Client is unable to see the answer; the test looks up the answers serverside
+        rows = ExamAnswer.objects.filter(attempt_id = attempt_id).select_related("drug")
+        answers = [
+            {"id" : r.pk, "user_response" : getattr(r.drug, r.answer_field)} 
+            for r in rows
+        ]
+
+        result = self.client.post(f"/api/exams/{attempt_id}/submit/",
+                                  {"answers" : answers}, format = "json")
+
+        self.assertEqual(result.status_code, 200)
+        self.assertEqual(result.data["score"], 5)
+        self.assertEqual(result.data["total"], 5)

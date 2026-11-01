@@ -327,3 +327,33 @@ class TestExamEndpoints(APITestCase):
         self.assertEqual(result.status_code, 200)
         self.assertEqual(result.data["score"], 5)
         self.assertEqual(result.data["total"], 5)
+
+    def test_submit_scores_partial_credit(self):
+        '''Score reflects the actual grading, not the question count'''
+        response = self.client.post("/api/exams/",{
+            "ranking_min" : 1, "ranking_max" : 5,
+            "question_mode": "recall", "allowed_formats" : "multiple_choice",
+        }, format = "json")
+
+        attempt_id = response.data["attempt_id"]
+
+        rows = list(ExamAnswer.objects.filter(attempt_id = attempt_id).select_related("drug"))
+        answers = []
+
+        for i, r in enumerate(rows):
+            correct = getattr(r.drug, r.answer_field)
+            #Looks weird but we're testing partial grading so we just say
+            #First 3 are right then the rest are wrong!
+            answers.append({"id" : r.pk, 
+                           "user_response" : correct if i < 3 else "incorrect",
+                           })
+
+        result = self.client.post(f"/api/exams/{attempt_id}/submit/",
+                                    {"answers" : answers}, format = "json")
+
+        self.assertEqual(result.data["score"], 3)
+        self.assertEqual(result.data["total"], 5)
+
+        graded = ExamAnswer.objects.filter(attempt_id = attempt_id)
+        self.assertEqual(graded.filter(was_correct = True).count(), 3)
+        self.assertEqual(graded.filter(was_correct = False).count(), 2)

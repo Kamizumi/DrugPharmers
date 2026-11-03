@@ -18,7 +18,7 @@ class Command(BaseCommand):
                     generic_name = row['generic_name'],
                     brand_name = row['brand_name'],
                     defaults = {
-                        'ranking' : i + 1,
+                        'ranking' : int(row['Rank']),
                         'drug_class': row['drug_class'],
                         'primary_fda_ind': row['primary_fda_ind'],
                         'other_fda_ind': row['other_fda_ind'],

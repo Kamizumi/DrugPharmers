@@ -17,7 +17,7 @@ import os
 load_dotenv()
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-DRUG_SEED_CSV = BASE_DIR.parent / "data" / "updated_drugs.csv"
+DRUG_SEED_CSV = BASE_DIR.parent / "data" / "drugs_300.csv"
 
 
 # Quick-start development settings - unsuitable for production
@@ -73,6 +73,28 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'config.wsgi.application'
+
+#DRF THROTTLING
+REST_FRAMEWORK = {
+
+    "DEFAULT_THROTTLE_CLASSES" : [
+        "rest_framework.throttling.AnonRateThrottle",
+        "rest_framework.throttling.UserRateThrottle"
+    ],
+
+    "DEFAULT_THROTTLE_RATES":{
+        "anon": "100/hour",
+        "user": "2000/day",
+        "exam_create" : "30/hour",
+    }
+}
+
+CACHES = {
+    "default" : {
+        "BACKEND" : "django.core.cache.backends.db.DatabaseCache",
+        "LOCATION": "cache_table",
+    }
+}
 
 
 # Database

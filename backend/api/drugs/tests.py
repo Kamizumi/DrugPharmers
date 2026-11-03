@@ -190,7 +190,7 @@ class TestFreeTextGrading(TestCase):
 
     def test_salt_required_is_found_from_data(self):
         """Checks to see if these drugs are shown to need to have salt included"""
-        self.assertEqual(salt_required(), {"hydroxyzine", "metoprolol"})
+        self.assertEqual(salt_required(), {"clindamycin", "hydroxyzine", "metoprolol"})
 
     def test_generic_accepts_base_name_unless_salt_matters(self):
         """Testing on drugs that do have multiple salts vs those that don't"""
@@ -201,6 +201,8 @@ class TestFreeTextGrading(TestCase):
             ("Metoprolol Succinate", "metoprolol", False),
             ("Hydroxyzine Pamaote", "hydroxyzine", False),
             ("Amoxicillin with Clavulanate Potassium", "amoxicillin", False),
+            ("Clindamycin Phosphate (Topical)", "clindamycin", False),
+            ("Clindamycin Phosphate (Topical)", "clindamycin phosphate", True),
         ]
 
         for stored, typed, expected in cases:

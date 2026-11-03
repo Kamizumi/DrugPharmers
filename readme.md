@@ -9,7 +9,7 @@ Pharmacy school demands rapid, accurate memorization of vast amounts of drug inf
 ### Key Features
 
 - **Customizable Flashcards**: Study the top 300 drugs with customizable filtering (filter by Drug Class, Brand vs. Generic, Core Indications, or High-Alert status).
--**Exam Creation**: Create exams based on simply recollection, a mix of fill in the blank and MC, or an exam that is created based on drugs that users missed the most!
+- **Exam Creation**: Create exams based on simply recollection, a mix of fill in the blank and MC, or an exam that is created based on drugs that users missed the most!
 - **Interactive Mini-Game**: A high-speed, timed review game designed to build pattern recognition for rapid drug matching (e.g., matching mechanisms of action to brand names). (IN DEVELOPMENT)
 - **NextAuth.js Authentication**: Secure user login pipelines utilizing individual developer profiles or custom credentials backed securely by Django.
 - **Comprehensive Drug Profile Database**: Detailed tracking for every compound, including:
